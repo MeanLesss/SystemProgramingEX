@@ -4,13 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Task3
+namespace GetNumberLib
 {
-    internal class Program
+    public class GetNumberLib
     {
-        static void Main(string[] args)
-        {
-
-        }
+            
     }
 }
