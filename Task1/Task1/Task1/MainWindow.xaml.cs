@@ -16,6 +16,7 @@ using Microsoft.Win32;
 using System.IO;
 using System.Threading;
 using System.Windows.Resources;
+using Path = System.IO.Path;
 
 namespace Task1
 {
@@ -27,7 +28,7 @@ namespace Task1
         private List<string> _badWordList = new List<string>();
 
         private static string badWordDir = @"..\..\..\BadWordList\badwords.txt";
-        private static string ScannedDir = @"..\..\..\ScannedFile\";
+        private static string copiedDir = @"..\..\..\ScannedFile\";
         private static string mask = "*******";
 
         private string fileName;
@@ -52,57 +53,89 @@ namespace Task1
         }
         private void ButtonStart_Click(object sender, RoutedEventArgs e)
         {
-            //end here last night
-
-            Thread startProgress = new Thread(new ThreadStart(MaskingWord));
-            startProgress.Start();
-            
+            ScanningForBadWord(fileName,_badWordList);
         }
 
-        private void MaskingWord()
+        public void ScanningForBadWord(string fileName, List<string> badWordList)
         {
-            int badCount = 0;
-            string line = "";
-            char[] lineArr = new char[20000];
-            string maskWord = "";
-            bool scannedLine = false;
             try
             {
+                int badCount = 0;
+                string line = "";
                 StreamReader reader = new StreamReader(fileName);
 
                 while (true)
                 {
                     line = reader.ReadLine();
-                    foreach (var badWord in _badWordList)
+                    foreach (var badWord in badWordList)
                     {
                         if (line.Contains(badWord))
                         {
                             badCount++;
-                            maskWord = line.Replace(badWord, mask) + "\n";
-                            UpdateDisplay(maskWord);
-                            scannedLine = true;
-                            break;
                         }
                     }
+
                     if (reader.EndOfStream)
                     {
                         break;
                     }
-
-                    if (!scannedLine)
-                    {
-                         UpdateDisplay(line);
-                    }
-
-                    scannedLine = false;
                 }
 
-                MessageBox.Show(badCount.ToString());
+                reader.Close();
+
+                if (badCount > 0)
+                {
+                    var destFileName = Path.GetFileName(fileName);
+                    var file = new FileInfo(fileName);
+                    var destination = new FileInfo(copiedDir + destFileName);
+                    Task.Run(() =>
+                    {
+                        Copyfile(file, destination, x => progressBar.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            progressBar.Value = x;
+                            lblPercent.Content = x.ToString() + "%";
+                        })));
+                    }).GetAwaiter().OnCompleted(() => progressBar.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        progressBar.Value = 100;
+                        lblPercent.Content = "100%";
+                        MessageBox.Show("You have successfully copied the file !", "Message", 
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+                    })));
+
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show("File error :" + ex.Message);
                 Thread.EndCriticalRegion();
+            }
+        }
+
+        public void Copyfile(FileInfo file, FileInfo destination, Action<int> progressCallback)//file is the current file
+        {
+
+            const int bufferSize = 1024 * 1024;
+            byte[] buffer = new byte[bufferSize], buffer2 = new byte[bufferSize];
+            bool swap = false;
+            int progress = 0, reportedProgress = 0, read = 0;
+            long len = file.Length;
+            float flen = len;
+            Task writer = null;
+            using (var source = file.OpenRead())
+            using (var dest = destination.OpenWrite())
+            {
+                dest.SetLength(source.Length);
+                for (long size = 0; size < len; size += read)
+                {
+                    if ((progress = ((int)((size / flen) * 100))) != reportedProgress)
+                        progressCallback(reportedProgress = progress);
+                    read = source.Read(swap ? buffer : buffer2, 0, bufferSize);
+                    writer?.Wait();
+                    writer = dest.WriteAsync(swap ? buffer : buffer2, 0, read);
+                    swap = !swap;
+                }
+                writer?.Wait();
             }
         }
 

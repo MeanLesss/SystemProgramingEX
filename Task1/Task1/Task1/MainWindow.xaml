@@ -23,7 +23,7 @@
                      Width="426" 
                      Margin="207,113,0,0" 
                      VerticalAlignment="Top" 
-                     Name="ProgressBar"/>
+                     Name="progressBar"/>
         <Button Content="Start" 
                 Name="ButtonStart"
                 HorizontalAlignment="Left"
