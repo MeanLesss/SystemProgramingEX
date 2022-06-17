@@ -18,7 +18,7 @@ namespace Task1
         private static string BADWORDDIR = @"..\..\..\BadWordList\badwords.txt";
         private static string REPORTDIR = @"..\..\..\Report\Report.txt";
         private static string TEMPDIR = @"..\..\..\Report\Temp.txt";
-        private static string MASK = " * ******";
+        private static string MASK = "*******";
         public int GetBadCount { get; set; }
         
         public MaskingWord()
@@ -90,38 +90,56 @@ namespace Task1
             StreamReader reader = new StreamReader(fileName.FullName);
             string maskWord = "";
             bool scannedLine = false;
-
+            bool scannedSub = false;
+            string[] subs = { "" };
+            string subWord = "";
+            string foundBadWord = "";
             while (true) //read everything from the copied file that have bad word
             {
-                line = reader.ReadLine();
-                foreach (var badWord in GetBadWords())
+                line = reader.ReadToEnd();
+                if (line != null)
                 {
-                    if (line != null)
+                    subs = line.Split(' ');
+                    foreach (var sub in subs)
                     {
-                        if (line.Contains(badWord))
+                        if (sub != foundBadWord)
                         {
-                            badCount++;
-                            maskWord = line.Replace(badWord, MASK); //mask the word
-                            maskedTexts.Add(maskWord);//add to masked list
-                            scannedLine = true;
-                            break;
+                            maskedTexts.Add(sub);
+                        }
+
+                        if (scannedSub == false)
+                        {
+                            foreach (var badWord in GetBadWords())
+                            {
+                                if (sub.Contains(badWord))
+                                {
+                                    badCount++;
+                                    maskWord = sub.Replace(badWord, MASK).ToString(); //mask the word
+                                    maskedTexts.Add(maskWord);
+                                    foundBadWord = badWord;
+                                    scannedLine = true;
+                                    scannedSub = true;
+                                }
+
+                                if (scannedSub == true)
+                                {
+                                    scannedSub = false;
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
+
                 if (reader.EndOfStream)
                 {
                     break;
                 }
 
-                if (!scannedLine)
-                {
-                    
-                    maskedTexts.Add(line);
-                }
-                scannedLine = false;
             }
             reader.Close();
 
+            //pass the value to a list for WriteReport()
             if (maskedTexts.Count > 0)
             {
                 var reportDir = fileName.FullName + "\t|" + fileName.Length + " bytes\t | " + badCount + " words found";
@@ -140,7 +158,7 @@ namespace Task1
 
                 foreach (var newLine in MaskedFile)//write everything in MaskedFile that got from GetMaskedTextFile passed from mainWindow
                 {
-                    writer.WriteLine(newLine);
+                    writer.Write(newLine + " ");
                 }
                 writer.Close();
                 

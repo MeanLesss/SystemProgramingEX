@@ -23,9 +23,13 @@ namespace Task1
 
         readonly MaskingWord _maskingWord = new MaskingWord();
 
+        static CancellationTokenSource tokenSource = new CancellationTokenSource();
+        
+        CancellationToken token = tokenSource.Token;
         public MainWindow()
         {
             InitializeComponent();
+
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -79,7 +83,7 @@ namespace Task1
             try
             {
                 List<string?> maskedTexts = new List<string?>();
-                
+
                 var destFileName = Path.GetFileName(fileName);
                 var file = new FileInfo(fileName);
                 var destination = new FileInfo(COPIEDDIR + destFileName);
@@ -92,12 +96,12 @@ namespace Task1
                     Task.Run(() =>
                     {
                         //First it copy the file to new directory if the bad word found and display loading progress
-                        _maskingWord.CopyFile(file, destination, 
+                        _maskingWord.CopyFile(file, destination,
                             x => progressBar.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            progressBar.Value = x;
-                            lblPercent.Content = x.ToString() + "%";
-                        })));
+                            {
+                                progressBar.Value = x;
+                                lblPercent.Content = x.ToString() + "%";
+                            })));
 
                         //then mask the word
                         _maskingWord.MaskingWords(destination, maskedTexts);
@@ -109,6 +113,7 @@ namespace Task1
                         progressBar.Value = 100;
                         lblPercent.Content = "100%";
                         UpdateResultDisplay(_maskingWord.GetBadCount.ToString() + " bad words found in " + file.Name);
+
                     })));
                 }
             }
@@ -116,6 +121,10 @@ namespace Task1
             {
                 MessageBox.Show("File error :" + ex.Message);
                 Thread.EndCriticalRegion();
+            }
+            finally
+            {
+                tokenSource.Cancel();
             }
         }
         
@@ -138,6 +147,7 @@ namespace Task1
         private void ButtonCancel_Click(object sender, RoutedEventArgs e)
         {
             TextBoxBrowse.Clear();
+            tokenSource.Cancel();
         }
 
         private void ButtonPause_Click(object sender, RoutedEventArgs e)
