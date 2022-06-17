@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Printing;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -15,10 +16,10 @@ namespace Task1
     public partial class MainWindow : Window
     {
         private List<string?> _badWordList = new List<string?>();
-        
-        private static string COPIEDDIR = @"..\..\..\ScannedFile\";
+        private List<BadWord> _badWords = new List<BadWord>();
 
-        private string _fileName = "";
+        private static string COPIEDDIR = @"..\..\..\ScannedFile\";
+        
 
         readonly MaskingWord _maskingWord = new MaskingWord();
 
@@ -38,24 +39,22 @@ namespace Task1
             if (fileDialog.ShowDialog() == true)
             {
                 TextBoxBrowse.Text = fileDialog.FileName;
-                _fileName = fileDialog.FileName;
             }
         }
         private void ButtonStart_Click(object sender, RoutedEventArgs e)
         {
-            if (_fileName != "") //scan the select file only if it browsed
+            if (TextBoxBrowse.Text != "") //scan the select file only if it browsed
             {
-                ScanningForBadWord(_fileName, _badWordList);
+                ScanningForBadWord(TextBoxBrowse.Text, _badWordList);
                
                 MessageBox.Show("Successfully scanned the file !", "Message",
                     MessageBoxButton.OK, MessageBoxImage.Information);
 
                 return;
             }
-            else // scan outside of the project folder if no directory or file selected
+            else // scan Drive D:\ outside of the project folder if no directory or file selected
             {
-                string[] files = null; 
-                //files = Directory.GetFiles(@"..\..\..\..\..\..\..\","*.txt",SearchOption.TopDirectoryOnly);
+                string[] files = {""};
                 files = Directory.GetFiles(@"D:\","*.txt",SearchOption.TopDirectoryOnly);
                 foreach (string file in files)
                 {
@@ -85,14 +84,16 @@ namespace Task1
                 var file = new FileInfo(fileName);
                 var destination = new FileInfo(COPIEDDIR + destFileName);
 
-                maskedTexts = _maskingWord.GetMaskedTextList(fileName);
+                maskedTexts = _maskingWord.GetMaskedTextList(file);
 
                 if (maskedTexts.Count > 0)
                 {
+                    //here it run a task for progress bar
                     Task.Run(() =>
                     {
-                        //First it copy the file to new directory if the bad word found
-                        _maskingWord.CopyFile(file, destination, x => progressBar.Dispatcher.BeginInvoke(new Action(() =>
+                        //First it copy the file to new directory if the bad word found and display loading progress
+                        _maskingWord.CopyFile(file, destination, 
+                            x => progressBar.Dispatcher.BeginInvoke(new Action(() =>
                         {
                             progressBar.Value = x;
                             lblPercent.Content = x.ToString() + "%";
@@ -100,6 +101,8 @@ namespace Task1
 
                         //then mask the word
                         _maskingWord.MaskingWords(destination, maskedTexts);
+                        //making report
+                        _maskingWord.WriteReport();
 
                     }).GetAwaiter().OnCompleted(() => progressBar.Dispatcher.BeginInvoke(new Action(() =>
                     {
@@ -116,7 +119,7 @@ namespace Task1
             }
         }
         
-        private void UpdateResultDisplay(string word)
+        private void UpdateResultDisplay(string? word)
         {
             this.ListViewDisplay.Dispatcher.Invoke(delegate()
             {
@@ -124,7 +127,7 @@ namespace Task1
             });
         }
 
-        private void UpdateReportDisplay(string word)
+        private void UpdateReportDisplay(string? word)
         {
             this.ListViewReport.Dispatcher.Invoke(delegate ()
             {
@@ -145,7 +148,11 @@ namespace Task1
         private void labelViewReport_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             //new a list of report read from file as a method from MaskingWord
-
+            ListViewReport.Items.Clear();
+            foreach (var line in _maskingWord.GetReportList())
+            {
+                UpdateReportDisplay(line);
+            }
         }
     }
 }

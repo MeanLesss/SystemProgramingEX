@@ -1,19 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 
 namespace Task1
 {
     public class MaskingWord
     {
-        private List<string?> ReportList = new List<string?>();
+        private List<BadWord> _badWords = new List<BadWord>();
+        private List<string?>  _foundDir = new List<string?>();
 
         private static string BADWORDDIR = @"..\..\..\BadWordList\badwords.txt";
         private static string REPORTDIR = @"..\..\..\Report\Report.txt";
-        private static string MASK = "*******";
+        private static string TEMPDIR = @"..\..\..\Report\Temp.txt";
+        private static string MASK = " * ******";
         public int GetBadCount { get; set; }
         
         public MaskingWord()
@@ -23,19 +28,70 @@ namespace Task1
 
         public void WriteReport()
         {
+            //add file replace in a list tag(#FILE_REPLACE) future update
 
+            //to sort and pick top 10 from the list  but NO clue how to count for each word that found (future update)
+            List<int> list = new List<int>();
+            var result = list.OrderByDescending(w => w).Take(10);
+            
+
+            //TEMP FILE IS JUST FOR FUTURE UPDATE TO SO NO DUPLICATE DIR SHOULD BE WRITE
+            using (FileStream fs = File.Create(TEMPDIR))
+            {
+                fs.Close();
+                //GET ALL REPORT FROM THE REPORT FILE
+                var reportList = GetReportList();
+                //WRITE TO REPORT
+                StreamWriter sw = new StreamWriter(REPORTDIR);
+
+                foreach (var line in reportList)
+                {
+                    sw.WriteLine(line);
+                }
+
+                //WRITE FROM LIST OF _foundDir THAT LOCATE IN GetMaskedTextList to save what found 
+                foreach (var found in _foundDir)
+                {
+                    sw.WriteLine(found);
+                }
+
+                sw.Close();
+                reportList.Clear();
+                _foundDir.Clear();
+            }
+
+
+            ////METHOD COPY TEMP TO REPORT BUT FOR FUTURE UPDATE
+            /*
+            File.Copy(TEMPDIR, REPORTDIR, true);*/
+            File.Delete(TEMPDIR);
+            
         }
-        public List<string?> GetMaskedTextList(string? fileName )
+
+        public List<string?> GetReportList()
+        {
+            List<string?> reportList = new List<string?>();
+
+            StreamReader reader = new StreamReader(REPORTDIR);
+            while (true)
+            {
+                reportList.Add(reader.ReadLine());
+                if(reader.EndOfStream) break;
+            }
+            reader.Close();
+            return reportList;
+        }
+        public List<string?> GetMaskedTextList(FileInfo fileName )
         {
             List<string?> maskedTexts = new List<string?>();
 
             int badCount = 0;
             string line = "";
-            StreamReader reader = new StreamReader(fileName);
+            StreamReader reader = new StreamReader(fileName.FullName);
             string maskWord = "";
             bool scannedLine = false;
 
-            while (true)
+            while (true) //read everything from the copied file that have bad word
             {
                 line = reader.ReadLine();
                 foreach (var badWord in GetBadWords())
@@ -45,9 +101,8 @@ namespace Task1
                         if (line.Contains(badWord))
                         {
                             badCount++;
-                            maskWord = line.Replace(badWord, MASK);
-                            //need to write a new file back and masked the word
-                            maskedTexts.Add(maskWord);
+                            maskWord = line.Replace(badWord, MASK); //mask the word
+                            maskedTexts.Add(maskWord);//add to masked list
                             scannedLine = true;
                             break;
                         }
@@ -60,25 +115,30 @@ namespace Task1
 
                 if (!scannedLine)
                 {
-                    //need to write a new file back and masked the word
+                    
                     maskedTexts.Add(line);
                 }
-
                 scannedLine = false;
             }
             reader.Close();
+
+            if (maskedTexts.Count > 0)
+            {
+                var reportDir = fileName.FullName + "\t|" + fileName.Length + " bytes\t | " + badCount + " words found";
+                _foundDir.Add(reportDir);
+            }
 
             GetBadCount = badCount;
             return maskedTexts;
         }
         //masking the bad word
-        public void MaskingWords(FileInfo fileName,List<string?> MaskedFile)
+        public void MaskingWords(FileInfo destination,List<string?> MaskedFile)
         {
             try
             {
-                StreamWriter writer = new StreamWriter(fileName.FullName);
+                StreamWriter writer = new StreamWriter(destination.FullName); 
 
-                foreach (var newLine in MaskedFile)
+                foreach (var newLine in MaskedFile)//write everything in MaskedFile that got from GetMaskedTextFile passed from mainWindow
                 {
                     writer.WriteLine(newLine);
                 }
@@ -88,7 +148,6 @@ namespace Task1
             catch (Exception ex)
             {
                 MessageBox.Show("File error :" + ex.Message);
-                Thread.EndCriticalRegion();
             }
         }
         //copy a new file
@@ -122,6 +181,7 @@ namespace Task1
             writer?.Wait();
         }
 
+        //gat all bad word from the textfile and put it all in a list 
         public List<string?> GetBadWords()
         {
             var badWords = new List<string?>();

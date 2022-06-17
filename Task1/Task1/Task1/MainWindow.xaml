@@ -59,7 +59,7 @@
                VerticalAlignment="Top" 
                FontSize="16"
                Foreground="Crimson"/>
-        <Label Content="Scan outside of project folder if now Dir selected"
+        <Label Content="Scan outside of project folder if no Dir selected"
             HorizontalAlignment="Left" 
             Margin="207,26,0,0" 
             VerticalAlignment="Top" 
