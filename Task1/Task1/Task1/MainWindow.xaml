@@ -66,8 +66,15 @@
             FontSize="16"
             Foreground="Crimson"/>
         <ListView Name="ListViewDisplay"
-            Margin="11,217,20,10">
+            Margin="11,264,400,10">
         </ListView>
+        <ListView x:Name="ListViewReport"
+            Margin="420,264,10,10"/>
+        <Label Content="Result :"
+               HorizontalAlignment="Left" Margin="11,222,0,0" VerticalAlignment="Top" FontSize="20"/>
+        <Label Content="Report :" 
+               HorizontalAlignment="Left" Margin="420,222,0,0" VerticalAlignment="Top" FontSize="20"/>
+        <Label x:Name="labelViewReport" Content="View Report" HorizontalAlignment="Left" Margin="510,228,0,0" VerticalAlignment="Top" FontSize="14" Foreground="#FF004AFF" FontStyle="Italic" MouseDown="labelViewReport_MouseDown"/>
 
     </Grid>
 </Window>

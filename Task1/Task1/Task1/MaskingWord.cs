@@ -1,30 +1,72 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Security.Permissions;
-using System.Security.RightsManagement;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 
 namespace Task1
 {
     public class MaskingWord
     {
         //private List<string> _badWordList = new List<string>();
-        private static string copiedDir = @"..\..\..\ScannedFile\";
+        private static string BADWORDDIR = @"..\..\..\BadWordList\badwords.txt";
+        private static string REPORTDIR = @"..\..\..\Report\Report.txt";
+        private static string MASK = "*******";
+        public int GetBadCount { get; set; }
         
-        int badCount = 0;
-
         public MaskingWord()
         {
             
         }
-        
+
+
+        public List<string?> GetMaskedTextList(string? fileName )
+        {
+            List<string?> maskedTexts = new List<string?>();
+
+            int badCount = 0;
+            string line = "";
+            StreamReader reader = new StreamReader(fileName);
+            string maskWord = "";
+            bool scannedLine = false;
+
+            while (true)
+            {
+                line = reader.ReadLine();
+                foreach (var badWord in GetBadWords())
+                {
+                    if (line != null)
+                    {
+                        if (line.Contains(badWord))
+                        {
+                            badCount++;
+                            maskWord = line.Replace(badWord, MASK);
+                            //need to write a new file back and masked the word
+                            maskedTexts.Add(maskWord);
+                            scannedLine = true;
+                            break;
+                        }
+                    }
+                }
+                if (reader.EndOfStream)
+                {
+                    break;
+                }
+
+                if (!scannedLine)
+                {
+                    //need to write a new file back and masked the word
+                    maskedTexts.Add(line);
+                }
+
+                scannedLine = false;
+            }
+            reader.Close();
+
+            GetBadCount = badCount;
+            return maskedTexts;
+        }
         //masking the bad word
         public void MaskingWords(FileInfo fileName,List<string?> MaskedFile)
         {
@@ -57,7 +99,7 @@ namespace Task1
             int read;
             long len = file.Length;
             float flen = len;
-            Task writer = null;
+            Task? writer = null;
 
             using var source = file.OpenRead();
             using var dest = destination.OpenWrite();
@@ -76,5 +118,24 @@ namespace Task1
             writer?.Wait();
         }
 
+        public List<string?> GetBadWords()
+        {
+            var badWords = new List<string?>();
+            try
+            {
+                StreamReader streamReader = new StreamReader(BADWORDDIR);
+                string? line;
+                while ((line = streamReader.ReadLine()) != null)
+                {
+                    badWords.Add(line);
+                }
+                streamReader.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error file : not found" + ex.Message);
+            }
+            return badWords;
+        }
     }
 }
