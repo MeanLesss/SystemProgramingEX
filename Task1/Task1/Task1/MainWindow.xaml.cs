@@ -25,11 +25,11 @@ namespace Task1
     /// </summary>
     public partial class MainWindow : Window
     {
-        private List<string> _badWordList = new List<string>();
+        private List<string?> _badWordList = new List<string?>();
 
-        private static string badWordDir = @"..\..\..\BadWordList\badwords.txt";
-        private static string copiedDir = @"..\..\..\ScannedFile\";
-        private static string mask = "*******";
+        private static string BADWORDDIR = @"..\..\..\BadWordList\badwords.txt";
+        private static string COPIEDDIR = @"..\..\..\ScannedFile\";
+        private static string MASK = "*******";
 
         private string fileName;
         public MainWindow()
@@ -53,16 +53,48 @@ namespace Task1
         }
         private void ButtonStart_Click(object sender, RoutedEventArgs e)
         {
-            ScanningForBadWord(fileName,_badWordList);
-        }
+            if (fileName != null) //scan the select file only if it browsed
+            {
+                ScanningForBadWord(fileName, _badWordList);
+               
+                MessageBox.Show("You have successfully copied the file !", "Message",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
 
-        public void ScanningForBadWord(string fileName, List<string> badWordList)
+                return;
+            }
+            else // scan outside of the project folder if no directory or file selected
+            {
+                string[] files = null;
+                files = Directory.GetFiles(@"..\..\..\..\..\..\..\","*.txt",SearchOption.TopDirectoryOnly);
+                foreach (string file in files)
+                {
+                    try
+                    {
+                        FileInfo fi = new FileInfo(file);
+                        ScanningForBadWord(fi.FullName.ToString(),_badWordList);
+                    }
+                    catch (System.IO.FileNotFoundException ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                        continue;
+                    }
+                }
+                MessageBox.Show("Successfully scanned the file !", "Message",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+        }
+        public void ScanningForBadWord(string fileName, List<string?> badWordList)
         {
             try
             {
                 int badCount = 0;
                 string line = "";
+                List<string?> MaskedFile = new List<string?>();
+
                 StreamReader reader = new StreamReader(fileName);
+                string maskWord = "";
+                bool scannedLine = false;
 
                 while (true)
                 {
@@ -72,37 +104,55 @@ namespace Task1
                         if (line.Contains(badWord))
                         {
                             badCount++;
+                            maskWord = line.Replace(badWord, MASK);
+                            //need to write a new file back and masked the word
+                            MaskedFile.Add(maskWord);
+                            scannedLine = true;
+                            break;
                         }
                     }
-
                     if (reader.EndOfStream)
                     {
                         break;
                     }
-                }
 
+                    if (!scannedLine)
+                    {
+                        //need to write a new file back and masked the word
+                        MaskedFile.Add(line);
+                    }
+
+                    scannedLine = false;
+                }
                 reader.Close();
+
+                var destFileName = Path.GetFileName(fileName);
+                var file = new FileInfo(fileName);
+                var destination = new FileInfo(COPIEDDIR + destFileName);
+
+                MaskingWord MaskingWord = new MaskingWord();
 
                 if (badCount > 0)
                 {
-                    var destFileName = Path.GetFileName(fileName);
-                    var file = new FileInfo(fileName);
-                    var destination = new FileInfo(copiedDir + destFileName);
+
                     Task.Run(() =>
                     {
-                        Copyfile(file, destination, x => progressBar.Dispatcher.BeginInvoke(new Action(() =>
+                        //First it copy the file to new directory if the bad word found
+                        MaskingWord.CopyFile(file, destination, x => progressBar.Dispatcher.BeginInvoke(new Action(() =>
                         {
                             progressBar.Value = x;
                             lblPercent.Content = x.ToString() + "%";
                         })));
+
+                        //then mask the word
+                        MaskingWord.MaskingWords(destination, MaskedFile);
+
                     }).GetAwaiter().OnCompleted(() => progressBar.Dispatcher.BeginInvoke(new Action(() =>
                     {
                         progressBar.Value = 100;
                         lblPercent.Content = "100%";
-                        MessageBox.Show("You have successfully copied the file !", "Message", 
-                            MessageBoxButton.OK, MessageBoxImage.Information);
+                        UpdateDisplay(badCount.ToString() + " bad words found in " + file.Name);
                     })));
-
                 }
             }
             catch (Exception ex)
@@ -111,67 +161,44 @@ namespace Task1
                 Thread.EndCriticalRegion();
             }
         }
-
-        public void Copyfile(FileInfo file, FileInfo destination, Action<int> progressCallback)//file is the current file
-        {
-
-            const int bufferSize = 1024 * 1024;
-            byte[] buffer = new byte[bufferSize], buffer2 = new byte[bufferSize];
-            bool swap = false;
-            int progress = 0, reportedProgress = 0, read = 0;
-            long len = file.Length;
-            float flen = len;
-            Task writer = null;
-            using (var source = file.OpenRead())
-            using (var dest = destination.OpenWrite())
-            {
-                dest.SetLength(source.Length);
-                for (long size = 0; size < len; size += read)
-                {
-                    if ((progress = ((int)((size / flen) * 100))) != reportedProgress)
-                        progressCallback(reportedProgress = progress);
-                    read = source.Read(swap ? buffer : buffer2, 0, bufferSize);
-                    writer?.Wait();
-                    writer = dest.WriteAsync(swap ? buffer : buffer2, 0, read);
-                    swap = !swap;
-                }
-                writer?.Wait();
-            }
-        }
-
+        
         private void UpdateDisplay(string word)
         {
-            this.TextBoxDisplay.Dispatcher.Invoke(delegate()
+            this.ListViewDisplay.Dispatcher.Invoke(delegate()
             {
-                TextBoxDisplay.Text += word + "\n";
+                ListViewDisplay.Items.Add(word);
             });
         }
-        private List<string> GetBadWords()
+        private static List<string?> GetBadWords()
         {
-            List<string> badWords = new List<string>();
-            
-            string line = "";
+            var badWords = new List<string?>();
             try
             {
-                StreamReader sr = new StreamReader(badWordDir);
-                while ((line = sr.ReadLine()) != null)
+                StreamReader streamReader = new StreamReader(BADWORDDIR);
+                string? line;
+                while ((line = streamReader.ReadLine()) != null)
                 {
                     badWords.Add(line);
                 }
-                sr.Close();
+                streamReader.Close();
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Error file : not found" + ex.Message);
             }
-            
+
 
             return badWords;
         }
 
         private void ButtonCancel_Click(object sender, RoutedEventArgs e)
         {
-            
+            TextBoxBrowse.Clear();
+        }
+
+        private void ButtonPause_Click(object sender, RoutedEventArgs e)
+        {
+            Task.WaitAll();
         }
     }
 }

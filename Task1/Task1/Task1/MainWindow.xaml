@@ -38,18 +38,13 @@
                 Margin="651,62,0,0" 
                 VerticalAlignment="Top" Width="97"
                 Height="31" Click="ButtonBrowse_Click" />
-        <TextBox Name="TextBoxDisplay" HorizontalAlignment="Center"
-                 Margin="0,217,0,0"
-                 TextWrapping="Wrap" 
-                 VerticalAlignment="Top" Width="780"
-                 Height="207"/>
         <Button 
             Content="Pause"
             x:Name="ButtonPause"
             HorizontalAlignment="Center"
             Margin="0,169,0,0" 
             VerticalAlignment="Top" Width="88" 
-            Height="32">
+            Height="32" Click="ButtonPause_Click">
         </Button>
         <Button Content="Cancel" 
                 x:Name="ButtonCancel"
@@ -58,6 +53,21 @@
                 Height="32" Margin="449,169,0,0" Click="ButtonCancel_Click"
 
         />
+        <Label Content="Note the file is so small the progress can NOT be wait to pause or cancel"
+               HorizontalAlignment="Left" 
+               Margin="202,136,0,0" 
+               VerticalAlignment="Top" 
+               FontSize="16"
+               Foreground="Crimson"/>
+        <Label Content="Scan outside of project folder if now Dir selected"
+            HorizontalAlignment="Left" 
+            Margin="207,26,0,0" 
+            VerticalAlignment="Top" 
+            FontSize="16"
+            Foreground="Crimson"/>
+        <ListView Name="ListViewDisplay"
+            Margin="11,217,20,10">
+        </ListView>
 
     </Grid>
 </Window>
