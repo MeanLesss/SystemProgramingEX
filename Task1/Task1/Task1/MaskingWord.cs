@@ -9,7 +9,8 @@ namespace Task1
 {
     public class MaskingWord
     {
-        //private List<string> _badWordList = new List<string>();
+        private List<string?> ReportList = new List<string?>();
+
         private static string BADWORDDIR = @"..\..\..\BadWordList\badwords.txt";
         private static string REPORTDIR = @"..\..\..\Report\Report.txt";
         private static string MASK = "*******";
@@ -20,7 +21,10 @@ namespace Task1
             
         }
 
+        public void WriteReport()
+        {
 
+        }
         public List<string?> GetMaskedTextList(string? fileName )
         {
             List<string?> maskedTexts = new List<string?>();
@@ -87,7 +91,7 @@ namespace Task1
                 Thread.EndCriticalRegion();
             }
         }
-        //cpoy a new file
+        //copy a new file
         public void CopyFile(FileInfo file, FileInfo destination, Action<int> progressCallback)//file is the current file
         {
             const int bufferSize = 20000 * 20000;
