@@ -1,0 +1,101 @@
+﻿
+        /// <summary>
+        /// old method
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="MaskedFile"></param>
+        /*public List<string?> GetMaskedTextList(FileInfo fileName )
+        {
+            List<string?> maskedTexts = new List<string?>();
+
+            int badCount = 0;
+            int i = 0;
+            StreamReader reader = new StreamReader(fileName.FullName);
+            bool scannedSub = false;
+            string[] subs = { "" };
+            string foundBadWord = "fuck";
+
+            while (true) //read everything from the copied file that have bad word
+            {
+                string line = reader.ReadToEnd();
+                if (line != null)
+                {
+                    subs = line.Split(' ');
+                    foreach (var sub in subs)
+                    {
+                        if (sub != foundBadWord)
+                        {
+                            maskedTexts.Add(sub);
+                        }
+
+                        if (scannedSub == false)
+                        {
+                            foreach (var badWord in GetBadWords())
+                            {
+                                if (sub.Contains(badWord))
+                                {
+                                    badCount++;
+                                    var maskWord = sub.Replace(badWord, MASK).ToString();
+                                    maskedTexts.Add(maskWord);
+                                    foundBadWord = badWord;
+                                    scannedSub = true;
+                                }
+
+                                if (scannedSub == true)
+                                {
+                                    scannedSub = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (i == subs.Length)
+                        {
+                            break;
+                        }
+
+                        i++;
+                    }
+                }
+
+                if (reader.EndOfStream)
+                {
+                    break;
+                }
+
+            }
+            reader.Close();
+
+            //pass the value to a list for WriteReport()
+            if (maskedTexts.Count > 0)
+            {
+                var reportDir = fileName.FullName + "\t|" + fileName.Length + " bytes\t | " + badCount + " words found";
+                _foundDir.Add(reportDir);
+            }
+
+            GetBadCount = badCount;
+            return maskedTexts;
+        }*/
+
+
+
+
+
+        ////method in mainWindow
+        Task.Run(() =>
+                {
+                    //First it copy the file to new directory if the bad word found and display loading progress
+                    _maskingWord.CopyFile(file, destination,
+                        x => progressBar.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            progressBar.Value = x;
+                            lblPercent.Content = x.ToString() + "%";
+                        })));
+                }).GetAwaiter().OnCompleted(() => progressBar.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    progressBar.Value = 100;
+                    lblPercent.Content = "100%";
+                    UpdateResultDisplay(_maskingWord.GetBadCount.ToString() + " bad words found in " + file.Name);
+
+                })));
+
