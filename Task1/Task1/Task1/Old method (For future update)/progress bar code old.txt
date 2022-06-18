@@ -1,0 +1,22 @@
+﻿Task.Run(() =>
+                    {
+                        //First it copy the file to new directory if the bad word found and display loading progress
+                        _maskingWord.CopyFile(file, destination,
+                            x => progressBar.Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                progressBar.Value = x;
+                                lblPercent.Content = x.ToString() + "%";
+                            })));
+
+                        //then mask the word
+                        _maskingWord.MaskingWords(destination, maskedTexts);
+                        //making report
+                        _maskingWord.WriteReport();
+
+                    }).GetAwaiter().OnCompleted(() => progressBar.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        progressBar.Value = 100;
+                        lblPercent.Content = "100%";
+                        UpdateResultDisplay(_maskingWord.GetBadCount.ToString() + " bad words found in " + file.Name);
+
+                    })));
