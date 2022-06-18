@@ -15,8 +15,8 @@ namespace Task1
     /// </summary>
     public partial class MainWindow : Window
     {
-        private List<string?> _badWordList = new List<string?>();
-        private List<BadWord> _badWords = new List<BadWord>();
+        //private List<string?> _badWordList = new List<string?>();
+        private List<BadWord?> _badWordList = new List<BadWord?>();
 
         private static string COPIEDDIR = @"..\..\..\ScannedFile\";
         
@@ -78,7 +78,7 @@ namespace Task1
                 return;
             }
         }
-        public void ScanningForBadWord(string fileName, List<string?> badWordList)
+        public void ScanningForBadWord(string fileName, List<BadWord> badWordList /*List<string?> badWordList*/)
         {
             try
             {

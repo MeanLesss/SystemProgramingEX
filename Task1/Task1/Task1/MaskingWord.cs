@@ -7,12 +7,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Xps.Serialization;
 
 namespace Task1
 {
     public class MaskingWord
     {
-        private List<BadWord> _badWords = new List<BadWord>();
+        private List<BadWord> _badWordList = new List<BadWord>();
         private List<string?>  _foundDir = new List<string?>();
 
         private static string BADWORDDIR = @"..\..\..\BadWordList\badwords.txt";
@@ -86,48 +87,64 @@ namespace Task1
             List<string?> maskedTexts = new List<string?>();
 
             int badCount = 0;
-            string line = "";
             StreamReader reader = new StreamReader(fileName.FullName);
-            string maskWord = "";
-            bool scannedLine = false;
             bool scannedSub = false;
-            string[] subs = { "" };
-            string subWord = "";
-            string foundBadWord = "";
+            List<string?> subs = null;
+            
             while (true) //read everything from the copied file that have bad word
             {
-                line = reader.ReadToEnd();
+                string line = reader.ReadLine();
                 if (line != null)
                 {
-                    subs = line.Split(' ');
+                    subs = line.Split(" ").ToList();
                     foreach (var sub in subs)
                     {
-                        if (sub != foundBadWord)
-                        {
-                            maskedTexts.Add(sub);
-                        }
+                        var getBadWord = GetBadWords();
 
-                        if (scannedSub == false)
+                        if (sub.Contains('.') || sub.Contains(','))
                         {
-                            foreach (var badWord in GetBadWords())
+                            string remove = "";
+                            if (sub.Contains('.'))
                             {
-                                if (sub.Contains(badWord))
-                                {
-                                    badCount++;
-                                    maskWord = sub.Replace(badWord, MASK).ToString(); //mask the word
-                                    maskedTexts.Add(maskWord);
-                                    foundBadWord = badWord;
-                                    scannedLine = true;
-                                    scannedSub = true;
-                                }
+                                remove = sub.Remove(sub.IndexOf('.'));
+                            }
 
-                                if (scannedSub == true)
-                                {
-                                    scannedSub = false;
-                                    break;
-                                }
+                            if (sub.Contains(','))
+                            {
+                                remove = sub.Remove(sub.IndexOf(','));
+                            }
+                            
+                            BadWord badword = getBadWord.Find(x => remove.Contains(x.Word));
+                            
+                            if (badword != null)
+                            {
+                                badCount++;
+                                var maskWord = sub.Replace(badword.Word, MASK).ToString();
+                                maskedTexts.Add(maskWord);
+                                scannedSub = true;
+                            }
+                            else
+                            {
+                                maskedTexts.Add(sub);
                             }
                         }
+                        else
+                        {
+                            BadWord badword = getBadWord.Find(x => sub.Contains(x.Word));
+                            if (badword != null)
+                            {
+                                badCount++;
+                                var maskWord = sub.Replace(badword.Word, MASK).ToString();
+                                maskedTexts.Add(maskWord);
+                                scannedSub = true;
+                            }
+                            else
+                            {
+                                maskedTexts.Add(sub);
+
+                            }
+                        }
+                        scannedSub = false;
                     }
                 }
 
@@ -149,6 +166,85 @@ namespace Task1
             GetBadCount = badCount;
             return maskedTexts;
         }
+
+        /// <summary>
+        /// old method
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="MaskedFile"></param>
+        /*public List<string?> GetMaskedTextList(FileInfo fileName )
+        {
+            List<string?> maskedTexts = new List<string?>();
+
+            int badCount = 0;
+            int i = 0;
+            StreamReader reader = new StreamReader(fileName.FullName);
+            bool scannedSub = false;
+            string[] subs = { "" };
+            string foundBadWord = "fuck";
+
+            while (true) //read everything from the copied file that have bad word
+            {
+                string line = reader.ReadToEnd();
+                if (line != null)
+                {
+                    subs = line.Split(' ');
+                    foreach (var sub in subs)
+                    {
+                        if (sub != foundBadWord)
+                        {
+                            maskedTexts.Add(sub);
+                        }
+
+                        if (scannedSub == false)
+                        {
+                            foreach (var badWord in GetBadWords())
+                            {
+                                if (sub.Contains(badWord))
+                                {
+                                    badCount++;
+                                    var maskWord = sub.Replace(badWord, MASK).ToString();
+                                    maskedTexts.Add(maskWord);
+                                    foundBadWord = badWord;
+                                    scannedSub = true;
+                                }
+
+                                if (scannedSub == true)
+                                {
+                                    scannedSub = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (i == subs.Length)
+                        {
+                            break;
+                        }
+
+                        i++;
+                    }
+                }
+
+                if (reader.EndOfStream)
+                {
+                    break;
+                }
+
+            }
+            reader.Close();
+
+            //pass the value to a list for WriteReport()
+            if (maskedTexts.Count > 0)
+            {
+                var reportDir = fileName.FullName + "\t|" + fileName.Length + " bytes\t | " + badCount + " words found";
+                _foundDir.Add(reportDir);
+            }
+
+            GetBadCount = badCount;
+            return maskedTexts;
+        }*/
+
         //masking the bad word
         public void MaskingWords(FileInfo destination,List<string?> MaskedFile)
         {
@@ -200,16 +296,18 @@ namespace Task1
         }
 
         //gat all bad word from the textfile and put it all in a list 
-        public List<string?> GetBadWords()
+        public List<BadWord> GetBadWords()
         {
-            var badWords = new List<string?>();
+            var badWords = new List<BadWord?>();
             try
             {
                 StreamReader streamReader = new StreamReader(BADWORDDIR);
                 string? line;
                 while ((line = streamReader.ReadLine()) != null)
                 {
-                    badWords.Add(line);
+                    BadWord? badWord = new BadWord();
+                    badWord.Word = line;
+                    badWords.Add(badWord);
                 }
                 streamReader.Close();
             }
