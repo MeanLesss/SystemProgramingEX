@@ -27,6 +27,11 @@ namespace Task1
             
         }
 
+
+        private void createFileReport()
+        {
+
+        }
         public void WriteReport()
         {
             //add file replace in a list tag(#FILE_REPLACE) future update
@@ -34,45 +39,56 @@ namespace Task1
             //to sort and pick top 10 from the list  but NO clue how to count for each word that found (future update)
             List<int> list = new List<int>();
             var result = list.OrderByDescending(w => w).Take(10);
-            
+
 
             //TEMP FILE IS JUST FOR FUTURE UPDATE TO SO NO DUPLICATE DIR SHOULD BE WRITE
-            using (FileStream fs = File.Create(TEMPDIR))
+            Thread thread = new Thread(new ThreadStart(createFileReport));
+            
+            if (!File.Exists(REPORTDIR))
             {
+                FileStream fs = new FileStream(REPORTDIR, FileMode.Create, FileAccess.ReadWrite);
                 fs.Close();
-                //GET ALL REPORT FROM THE REPORT FILE
-                var reportList = GetReportList();
-                //WRITE TO REPORT
-                StreamWriter sw = new StreamWriter(REPORTDIR);
-
-                foreach (var line in reportList)
-                {
-                    sw.WriteLine(line);
-                }
-
-                //WRITE FROM LIST OF _foundDir THAT LOCATE IN GetMaskedTextList to save what found 
-                foreach (var found in _foundDir)
-                {
-                    sw.WriteLine(found);
-                }
-
-                sw.Close();
-                reportList.Clear();
-                _foundDir.Clear();
             }
+
+            //GET ALL REPORT FROM THE REPORT FILE
+            var reportList = GetReportList();
+            //WRITE TO REPORT
+            StreamWriter sw = new StreamWriter(REPORTDIR);
+
+            foreach (var line in reportList)
+            {
+                sw.WriteLine(line);
+            }
+
+            //WRITE FROM LIST OF _foundDir THAT LOCATE IN GetMaskedTextList to save what found 
+            foreach (var found in _foundDir)
+            {
+                sw.WriteLine(found);
+            }
+
+            sw.Close();
+            reportList.Clear();
+            _foundDir.Clear();
+
 
 
             ////METHOD COPY TEMP TO REPORT BUT FOR FUTURE UPDATE
             /*
             File.Copy(TEMPDIR, REPORTDIR, true);*/
             File.Delete(TEMPDIR);
-            
+
         }
+
 
         public List<string?> GetReportList()
         {
             List<string?> reportList = new List<string?>();
 
+            if (!File.Exists(REPORTDIR))
+            {
+                FileStream fs = File.Create(REPORTDIR);
+                fs.Close();
+            }
             StreamReader reader = new StreamReader(REPORTDIR);
             while (true)
             {
