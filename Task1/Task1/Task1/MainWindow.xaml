@@ -27,8 +27,8 @@
         <Button Content="Start" 
                 Name="ButtonStart"
                 HorizontalAlignment="Left"
-                Margin="207,169,0,0" 
-                VerticalAlignment="Top" Width="89" 
+                Margin="210,191,0,0" 
+                VerticalAlignment="Top" Width="90" 
                 Height="32" Click="ButtonStart_Click"
                 />
         <Label Content="0%" HorizontalAlignment="Left" Margin="638,110,0,0" VerticalAlignment="Top" Name="lblPercent"/>
@@ -41,21 +41,21 @@
         <Button 
             Content="Pause"
             x:Name="ButtonPause"
-            HorizontalAlignment="Center"
-            Margin="0,169,0,0" 
+            HorizontalAlignment="Left"
+            Margin="482,191,0,0" 
             VerticalAlignment="Top" Width="88" 
-            Height="32" Click="ButtonPause_Click">
-        </Button>
+            Height="32" Click="ButtonPause_Click"
+            IsEnabled="False"/>
         <Button Content="Cancel" 
                 x:Name="ButtonCancel"
                 HorizontalAlignment="Left" 
-                VerticalAlignment="Top" Width="89" 
-                Height="32" Margin="449,169,0,0" Click="ButtonCancel_Click"
+                VerticalAlignment="Top" Width="90" 
+                Height="32" Margin="574,191,0,0" Click="ButtonCancel_Click"
 
         />
         <Label Content="Note the file is so small the progress can NOT be wait to pause or cancel"
                HorizontalAlignment="Left" 
-               Margin="202,136,0,0" 
+               Margin="206,158,0,0" 
                VerticalAlignment="Top" 
                FontSize="16"
                Foreground="Crimson"/>
@@ -75,6 +75,22 @@
         <Label Content="Report :" 
                HorizontalAlignment="Left" Margin="420,222,0,0" VerticalAlignment="Top" FontSize="20"/>
         <Label x:Name="labelViewReport" Content="View Report" HorizontalAlignment="Left" Margin="510,228,0,0" VerticalAlignment="Top" FontSize="14" Foreground="#FF004AFF" FontStyle="Italic" MouseDown="labelViewReport_MouseDown"/>
+
+        <Label Content="process"
+               Name="labelProcess"
+               HorizontalAlignment="Left" 
+               Margin="205,132,0,0" 
+               VerticalAlignment="Top" 
+               FontSize="12"
+               Foreground="black"/>
+        <Button Content="Resume" 
+            x:Name="ButtonResume"
+            HorizontalAlignment="Left"
+            Margin="387,191,0,0" 
+            VerticalAlignment="Top" Width="90" 
+            Height="32" Click="ButtonResume_Click"
+            IsEnabled="False"
+                />
 
     </Grid>
 </Window>

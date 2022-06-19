@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Printing;
 using System.Threading;
@@ -15,19 +16,22 @@ namespace Task1
     /// </summary>
     public partial class MainWindow : Window
     {
-        //private List<string?> _badWordList = new List<string?>();
+        static CancellationTokenSource source = new CancellationTokenSource();
+        static CancellationToken token = source.Token;
+        TaskFactory taskFactory = new TaskFactory(token);
+        Mutex _mutex = new Mutex();
+
+
         private List<BadWord?> _badWordList = new List<BadWord?>();
 
-        private static string COPIEDDIR = @"..\..\..\ScannedFile\";
+        private static readonly string COPIEDDIR = @"..\..\..\ScannedFile\";
         
 
         readonly MaskingWord _maskingWord = new MaskingWord();
-
-        static CancellationTokenSource tokenSource = new CancellationTokenSource();
         
-        CancellationToken token = tokenSource.Token;
         public MainWindow()
         {
+            
             InitializeComponent();
 
         }
@@ -37,9 +41,14 @@ namespace Task1
         }
         private void ButtonBrowse_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog fileDialog = new OpenFileDialog();
-            fileDialog.Filter = "(*.txt;*.docx)|*.txt;*.docx";
-            fileDialog.Multiselect = true;
+            labelProcess.Content = " ";
+            lblPercent.Content = "0%";
+            progressBar.Value = 0;
+            OpenFileDialog fileDialog = new OpenFileDialog
+            {
+                Filter = "(*.txt;*.docx)|*.txt;*.docx",
+                Multiselect = true
+            };
             if (fileDialog.ShowDialog() == true)
             {
                 TextBoxBrowse.Text = fileDialog.FileName;
@@ -47,14 +56,14 @@ namespace Task1
         }
         private void ButtonStart_Click(object sender, RoutedEventArgs e)
         {
+            labelProcess.Content = " ";
+            lblPercent.Content = "0%";
+            progressBar.Value = 0;
+            ButtonStart.IsEnabled = false;
+            ButtonPause.IsEnabled = true;
             if (TextBoxBrowse.Text != "") //scan the select file only if it browsed
             {
                 ScanningForBadWord(TextBoxBrowse.Text, _badWordList);
-               
-                MessageBox.Show("Successfully scanned the file !", "Message",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-
-                return;
             }
             else // scan Drive D:\ outside of the project folder if no directory or file selected
             {
@@ -73,48 +82,83 @@ namespace Task1
                         continue;
                     }
                 }
-                MessageBox.Show("Successfully scanned the file !", "Message",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
             }
         }
-        public void ScanningForBadWord(string fileName, List<BadWord> badWordList /*List<string?> badWordList*/)
+        public void ScanningForBadWord(string fileName, List<BadWord?> badWordList)
         {
             try
             {
-                List<string?> maskedTexts = new List<string?>();
-
+                var maskedTexts = new List<string?>();
                 var destFileName = Path.GetFileName(fileName);
                 var file = new FileInfo(fileName);
                 var destination = new FileInfo(COPIEDDIR + destFileName);
-
                 maskedTexts = _maskingWord.GetMaskedTextList(file);
+                //copy file when it found bad word
+                Thread copyThread = new Thread(copyThread => _maskingWord.CopyFile(file, destination,
+                    x => progressBar.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        labelProcess.Content = "Copying file";
+                        progressBar.Value = x;
+                        lblPercent.Content = x.ToString() + "%";
+                    }))));
+                //then mask the word
+                Thread maskingWordsThread = new Thread(masking => _maskingWord.MaskingWords(destination, maskedTexts,
+                    x =>progressBar.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        labelProcess.Content = "Masking word";
+                        progressBar.Value = x;
+                        lblPercent.Content = x.ToString() + "%";
+                    }))));
+
+                //making report
+                Thread threadReport = new Thread(x => _maskingWord.WriteReport(
+                    x=>progressBar.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        labelProcess.Content = "Making report";
+                        progressBar.Value = x;
+                        lblPercent.Content = x.ToString() + "%";
+                    }))));
+
 
                 if (maskedTexts.Count > 0)
                 {
-                    //here it run a task for progress bar
                     Task.Run(() =>
                     {
+                        this.labelProcess.Dispatcher.BeginInvoke(() => { labelProcess.Content = "Copying file"; });
                         //First it copy the file to new directory if the bad word found and display loading progress
-                        _maskingWord.CopyFile(file, destination,
-                            x => progressBar.Dispatcher.BeginInvoke(new Action(() =>
-                            {
-                                progressBar.Value = x;
-                                lblPercent.Content = x.ToString() + "%";
-                            })));
+                        _mutex.WaitOne();
+                        copyThread.Start(source.Token);
+                        copyThread.Join();
+                        _mutex.ReleaseMutex();
 
-                        //then mask the word
-                        _maskingWord.MaskingWords(destination, maskedTexts);
-                        //making report
-                        _maskingWord.WriteReport();
+                        Thread.Sleep(1000);
+                        ResetProgressBar();
+                        _mutex.WaitOne();
+                        maskingWordsThread.Start();
+                        maskingWordsThread.Join();
+                        _mutex.ReleaseMutex();
+
+                        Thread.Sleep(1000);
+                        ResetProgressBar();
+                        //this.labelProcess.Dispatcher.BeginInvoke(() => { labelProcess.Content = "Making report"; });
+                        _mutex.WaitOne();
+                        threadReport.Start();
+                        threadReport.Join();
+                        _mutex.ReleaseMutex();
 
                     }).GetAwaiter().OnCompleted(() => progressBar.Dispatcher.BeginInvoke(new Action(() =>
                     {
+                        //if the file is too small it just gonna jump here cuz the calculation is at 0.0sth so
+                        //the return progress is still 0
                         progressBar.Value = 100;
                         lblPercent.Content = "100%";
                         UpdateResultDisplay(_maskingWord.GetBadCount.ToString() + " bad words found in " + file.Name);
-
+                        ButtonStart.IsEnabled = true;
+                        ButtonPause.IsEnabled = false;
+                        ButtonResume.IsEnabled = false;
                     })));
+
+
                 }
             }
             catch (Exception ex)
@@ -122,12 +166,23 @@ namespace Task1
                 MessageBox.Show("File error :" + ex.Message);
                 Thread.EndCriticalRegion();
             }
-            finally
-            {
-                tokenSource.Cancel();
-            }
         }
-        
+
+        private void ResetProgressBar()
+        {
+            this.progressBar.Dispatcher.BeginInvoke(delegate()
+            {
+                progressBar.Value = 0;
+            });
+            this.labelProcess.Dispatcher.BeginInvoke(delegate()
+            {
+                labelProcess.Content = " ";
+            });
+            this.lblPercent.Dispatcher.BeginInvoke(delegate()
+            {
+                lblPercent.Content = "0%";
+            });
+        }
         private void UpdateResultDisplay(string? word)
         {
             this.ListViewDisplay.Dispatcher.Invoke(delegate()
@@ -147,14 +202,24 @@ namespace Task1
         private void ButtonCancel_Click(object sender, RoutedEventArgs e)
         {
             TextBoxBrowse.Clear();
-            tokenSource.Cancel();
+            labelProcess.Content = " ";
+            lblPercent.Content = "0%";
+            progressBar.Value = 0;
+            source.Cancel();
         }
 
         private void ButtonPause_Click(object sender, RoutedEventArgs e)
         {
-            Task.WaitAll();
+            ButtonPause.IsEnabled = false;
+            ButtonResume.IsEnabled = true;
+            _mutex.WaitOne();
         }
-
+        private void ButtonResume_Click(object sender, RoutedEventArgs e)
+        {
+            ButtonPause.IsEnabled = true;
+            ButtonResume.IsEnabled = false;
+            _mutex.ReleaseMutex();
+        }
         private void labelViewReport_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             //new a list of report read from file as a method from MaskingWord
@@ -164,5 +229,7 @@ namespace Task1
                 UpdateReportDisplay(line);
             }
         }
+
+       
     }
 }

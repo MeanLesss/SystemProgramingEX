@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,7 @@ namespace Task1
     public class MaskingWord
     {
         private List<BadWord> _badWordList = new List<BadWord>();
-        private List<string?>  _foundDir = new List<string?>();
+        private readonly List<string?>  _foundDir = new List<string?>();
 
         private static string BADWORDDIR = @"..\..\..\BadWordList\badwords.txt";
         private static string REPORTDIR = @"..\..\..\Report\Report.txt";
@@ -26,7 +27,7 @@ namespace Task1
         {
             
         }
-        public void WriteReport()
+        public void WriteReport(Action<int> progressCallBack)
         {
             //add file replace in a list tag(#FILE_REPLACE) future update
 
@@ -44,25 +45,32 @@ namespace Task1
             //GET ALL REPORT FROM THE REPORT FILE
             var reportList = GetReportList();
 
+            //combine list
+            _foundDir.ForEach(found => reportList.Add(found));
+
             //WRITE TO OLD REPORT
             StreamWriter sw = new StreamWriter(REPORTDIR);
-            foreach (var line in reportList)
-            {
-                sw.WriteLine(line);
-            }
 
-            //WRITE FROM LIST OF _foundDir THAT LOCATE IN GetMaskedTextList to save what found NEW REPORT
-            foreach (var found in _foundDir)
+
+            int progress = 0;
+            int i = 0;
+            int reportedProgress = 0;
+            foreach (var report in reportList)
             {
-                sw.WriteLine(found);
+                sw.WriteLine(report);
+                //progress part
+                float stringLen = i;
+                float maskFileLen = reportList.Count;
+
+                if ((progress = (int)((stringLen / maskFileLen) * 100)) != reportedProgress)
+                    progressCallBack(reportedProgress = progress);
+                i++;
             }
 
             sw.Close();
             reportList.Clear();
             _foundDir.Clear();
-
-
-
+            
             ////METHOD COPY TEMP TO REPORT BUT FOR FUTURE UPDATE
             /*
             File.Copy(TEMPDIR, REPORTDIR, true);*/
@@ -98,15 +106,13 @@ namespace Task1
 
             int badCount = 0;
             StreamReader reader = new StreamReader(fileName.FullName);
-            bool scannedSub = false;
-            List<string?> subs = null;
-            
+
             while (true) //read everything from the copied file that have bad word
             {
                 string line = reader.ReadLine();
                 if (line != null)
                 {
-                    subs = line.Split(" ").ToList();
+                    List<string?>? subs = line.Split(" ").ToList();
                     foreach (var sub in subs)
                     {
                         var getBadWord = GetBadWords();
@@ -131,7 +137,6 @@ namespace Task1
                                 badCount++;
                                 var maskWord = sub.Replace(badword.Word, MASK).ToString();
                                 maskedTexts.Add(maskWord);
-                                scannedSub = true;
                             }
                             else
                             {
@@ -146,7 +151,6 @@ namespace Task1
                                 badCount++;
                                 var maskWord = sub.Replace(badword.Word, MASK).ToString();
                                 maskedTexts.Add(maskWord);
-                                scannedSub = true;
                             }
                             else
                             {
@@ -154,7 +158,6 @@ namespace Task1
 
                             }
                         }
-                        scannedSub = false;
                     }
                 }
 
@@ -177,136 +180,63 @@ namespace Task1
             return maskedTexts;
         }
 
-        /// <summary>
-        /// old method
-        /// </summary>
-        /// <param name="destination"></param>
-        /// <param name="MaskedFile"></param>
-        /*public List<string?> GetMaskedTextList(FileInfo fileName )
-        {
-            List<string?> maskedTexts = new List<string?>();
-
-            int badCount = 0;
-            int i = 0;
-            StreamReader reader = new StreamReader(fileName.FullName);
-            bool scannedSub = false;
-            string[] subs = { "" };
-            string foundBadWord = "fuck";
-
-            while (true) //read everything from the copied file that have bad word
-            {
-                string line = reader.ReadToEnd();
-                if (line != null)
-                {
-                    subs = line.Split(' ');
-                    foreach (var sub in subs)
-                    {
-                        if (sub != foundBadWord)
-                        {
-                            maskedTexts.Add(sub);
-                        }
-
-                        if (scannedSub == false)
-                        {
-                            foreach (var badWord in GetBadWords())
-                            {
-                                if (sub.Contains(badWord))
-                                {
-                                    badCount++;
-                                    var maskWord = sub.Replace(badWord, MASK).ToString();
-                                    maskedTexts.Add(maskWord);
-                                    foundBadWord = badWord;
-                                    scannedSub = true;
-                                }
-
-                                if (scannedSub == true)
-                                {
-                                    scannedSub = false;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (i == subs.Length)
-                        {
-                            break;
-                        }
-
-                        i++;
-                    }
-                }
-
-                if (reader.EndOfStream)
-                {
-                    break;
-                }
-
-            }
-            reader.Close();
-
-            //pass the value to a list for WriteReport()
-            if (maskedTexts.Count > 0)
-            {
-                var reportDir = fileName.FullName + "\t|" + fileName.Length + " bytes\t | " + badCount + " words found";
-                _foundDir.Add(reportDir);
-            }
-
-            GetBadCount = badCount;
-            return maskedTexts;
-        }*/
-
         //masking the bad word
-        public void MaskingWords(FileInfo destination,List<string?> MaskedFile)
+        public void MaskingWords(FileInfo destination, List<string?> MaskedFile, Action<int> progressCallBack)
         {
             try
             {
-                StreamWriter writer = new StreamWriter(destination.FullName); 
-
-                foreach (var newLine in MaskedFile)//write everything in MaskedFile that got from GetMaskedTextFile passed from mainWindow
+                int progress = 0;
+                int i = 0;
+                int reportedProgress = 0;
+                StreamWriter writer = new StreamWriter(destination.FullName);
+                foreach (var newLine in MaskedFile) //write everything in MaskedFile that got from GetMaskedTextFile passed from mainWindow
                 {
                     writer.Write(newLine + " ");
+                    //progress part
+                    float stringLen = i;
+                    float maskFileLen = MaskedFile.Count;
+                 
+                    if ((progress = (int)((stringLen / maskFileLen) * 100)) != reportedProgress)
+                        progressCallBack(reportedProgress = progress);
+                    i++;
                 }
                 writer.Close();
-                
             }
             catch (Exception ex)
             {
-                MessageBox.Show("File error :" + ex.Message);
+
             }
         }
+
         //copy a new file
-        public void CopyFile(FileInfo file, FileInfo destination, Action<int> progressCallback)//file is the current file
+        public void CopyFile(FileInfo file, FileInfo destination,Action<int> progressCallback) //file is the current file
         {
-            const int bufferSize = 20000 * 20000;
-            byte[] buffer = new byte[bufferSize];
-            byte[] buffer2 = new byte[bufferSize];
-
+            const int bufferSize = 1024 * 1024;
+            byte[] buffer = new byte[bufferSize], buffer2 = new byte[bufferSize];
             bool swap = false;
-            int reportedProgress = 0;
-            int read;
-            long len = file.Length;
+            int progress = 0, reportedProgress = 0, read = 0;
+            float len = file.Length;
             float flen = len;
-            Task? writer = null;
-
-            using var source = file.OpenRead();
-            using var dest = destination.OpenWrite();
-            dest.SetLength(source.Length);
-
-            for (long size = 0; size < len; size += read)
+            Task writer = null;
+            using (var source = file.OpenRead())
+            using (var dest = destination.OpenWrite())
             {
-                int progress;
-                if ((progress = ((int)((size / flen) * 100))) != reportedProgress)
-                    progressCallback(reportedProgress = progress);
-                read = source.Read(swap ? buffer : buffer2, 0, bufferSize);
+                dest.SetLength(source.Length);
+                for (float size = 1; size < len; size += read)
+                {
+                    if ((progress = (int)((size / flen) * 100000000)) != reportedProgress)
+                        progressCallback(reportedProgress = progress);
+                    read = source.Read(swap ? buffer : buffer2, 0, bufferSize);
+                    writer?.Wait();
+                    writer = dest.WriteAsync(swap ? buffer : buffer2, 0, read);
+                    swap = !swap;
+                }
                 writer?.Wait();
-                writer = dest.WriteAsync(swap ? buffer : buffer2, 0, read);
-                swap = !swap;
             }
-            writer?.Wait();
         }
 
         //gat all bad word from the textfile and put it all in a list 
-        public List<BadWord> GetBadWords()
+        public List<BadWord?> GetBadWords()
         {
             var badWords = new List<BadWord?>();
             try
