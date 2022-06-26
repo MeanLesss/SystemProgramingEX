@@ -154,7 +154,9 @@ namespace Task1
                         //the return progress is still 0
                         progressBar.Value = 100;
                         lblPercent.Content = "100%";
+                        //result box update and getBadWordCount from the method that run already by property
                         UpdateResultDisplay(_maskingWord.GetBadCount.ToString() + " bad words found in " + file.Name);
+
                         ButtonStart.IsEnabled = true;
                         ButtonPause.IsEnabled = false;
                         ButtonResume.IsEnabled = false;

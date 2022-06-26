@@ -25,7 +25,6 @@ namespace Task1
         private static string BADWORDDIRRANK = @"..\..\..\BadWordList\badwordrank.txt";
         private static string TESTFILE = @"..\..\..\BadWordList\Test.txt";
         private static string REPORTDIR = @"..\..\..\Report\Report.txt";
-        private static string TEMPDIR = @"..\..\..\Report\Temp.txt";
         private static string MASK = "*******";
         public int GetBadCount { get; set; }
         
@@ -104,9 +103,8 @@ namespace Task1
 
             //WRITE TO OLD REPORT
             StreamWriter sw = new StreamWriter(REPORTDIR);
-
-
-            int progress = 0;
+            
+            int progress = 0;//progress of file written into text File
             int i = 0;
             int reportedProgress = 0;
             foreach (var report in reportList)
