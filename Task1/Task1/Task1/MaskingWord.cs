@@ -72,17 +72,18 @@ namespace Task1
                 sw.WriteLine(word.Count + ":" + word.Word);
             }
             sw.Close();
-
+            _badWordReport.Clear();
         }
-
+        public List<BadWord?> GetTopWord(List<BadWord?> refreshedList) 
+        {
+            var topWord = refreshedList;
+            //to sort and pick top 10 from the list  but NO clue how to count for each word that found (future update)
+            /*List<int> list = new List<int>();*/
+            var result = topWord.OrderByDescending(w => w.Count).Take(10);
+            return topWord;
+        }
         public void WriteReport(Action<int> progressCallBack)
         {
-            //add file replace in a list tag(#FILE_REPLACE) future update
-
-            //to sort and pick top 10 from the list  but NO clue how to count for each word that found (future update)
-            /*List<int> list = new List<int>();
-            var result = list.OrderByDescending(w => w).Take(10);*/
-
             if (!File.Exists(REPORTDIR))
             {
                 FileStream fs = File.Create(REPORTDIR);
@@ -117,12 +118,6 @@ namespace Task1
             sw.Close();
             reportList.Clear();
             _foundDir.Clear();
-            
-            ////METHOD COPY TEMP TO REPORT BUT FOR FUTURE UPDATE
-            /*
-            File.Copy(TEMPDIR, REPORTDIR, true);*/
-            //File.Delete(TEMPDIR);
-
         }
 
 

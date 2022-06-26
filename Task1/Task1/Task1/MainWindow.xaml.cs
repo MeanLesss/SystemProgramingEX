@@ -38,6 +38,7 @@ namespace Task1
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             _badWordList = _maskingWord.GetBadWordRank();
+
             foreach (var line in _badWordList)
             {
                 ListViewTopWord.Items.Add(line.Count + " - " + line.Word);
@@ -161,12 +162,15 @@ namespace Task1
                         ButtonStart.IsEnabled = true;
                         ButtonPause.IsEnabled = false;
                         ButtonResume.IsEnabled = false;
+                        //refresh the old list
+                        _badWordList.Clear();
+                        _badWordList = _maskingWord.GetBadWordRank();
                     })));
                 }
-                _maskingWord.WriteBadWordReport(_badWordList);
+                _maskingWord.WriteBadWordReport(_badWordList);// make this a thread too and make progress
 
                 ListViewTopWord.Items.Clear();
-                foreach (var word in _maskingWord.GetBadWordReport())
+                foreach (var word in _maskingWord.GetTopWord(_badWordList))
                 {
                     ListViewTopWord.Items.Add(word.Count + " - " + word.Word);
                 }
