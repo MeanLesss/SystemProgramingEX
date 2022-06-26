@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Enumeration;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Xps.Serialization;
 
@@ -15,9 +17,13 @@ namespace Task1
     public class MaskingWord
     {
         private List<BadWord> _badWordList = new List<BadWord>();
+        private readonly List<BadWord?> _badWordReport = new List<BadWord?>();
+
         private readonly List<string?>  _foundDir = new List<string?>();
 
         private static string BADWORDDIR = @"..\..\..\BadWordList\badwords.txt";
+        private static string BADWORDDIRRANK = @"..\..\..\BadWordList\badwordrank.txt";
+        private static string TESTFILE = @"..\..\..\BadWordList\Test.txt";
         private static string REPORTDIR = @"..\..\..\Report\Report.txt";
         private static string TEMPDIR = @"..\..\..\Report\Temp.txt";
         private static string MASK = "*******";
@@ -27,14 +33,55 @@ namespace Task1
         {
             
         }
+
+        public List<BadWord> GetBadWordReport()
+        {
+            var badwordReport = _badWordReport.GroupBy(x => x.Word)
+                .Select(g => new BadWord()
+                {
+                    Word = g.Key,
+                    Count = g.Select(x => x.Count).Max()
+                });
+
+            return badwordReport.ToList();
+        }
+
+        public void WriteBadWordReport (List<BadWord?> oldList)
+        {
+            if (!File.Exists(BADWORDDIRRANK))
+            {
+                FileStream fs = File.Create(BADWORDDIRRANK);
+                fs.Close();
+            }
+            // still cant find the problem why it double?????????????????????
+
+            //var oldList = GetBadWordRank();
+            GetBadWordReport().ForEach(oldList.Add);
+
+            var newList = oldList.GroupBy(x => x.Word).Select(
+                g => new BadWord()
+                {
+                    Word = g.Key,
+                    Count = g.Select(x => x.Count).Max()
+                });
+
+            StreamWriter sw = new StreamWriter(BADWORDDIRRANK);
+
+            foreach (var word in newList.ToList())
+            {
+                sw.WriteLine(word.Count + ":" + word.Word);
+            }
+            sw.Close();
+
+        }
+
         public void WriteReport(Action<int> progressCallBack)
         {
             //add file replace in a list tag(#FILE_REPLACE) future update
 
             //to sort and pick top 10 from the list  but NO clue how to count for each word that found (future update)
-            List<int> list = new List<int>();
-            var result = list.OrderByDescending(w => w).Take(10);
-            
+            /*List<int> list = new List<int>();
+            var result = list.OrderByDescending(w => w).Take(10);*/
 
             if (!File.Exists(REPORTDIR))
             {
@@ -74,7 +121,7 @@ namespace Task1
             ////METHOD COPY TEMP TO REPORT BUT FOR FUTURE UPDATE
             /*
             File.Copy(TEMPDIR, REPORTDIR, true);*/
-            File.Delete(TEMPDIR);
+            //File.Delete(TEMPDIR);
 
         }
 
@@ -100,11 +147,12 @@ namespace Task1
 
             return reportList;
         }
-        public List<string?> GetMaskedTextList(FileInfo fileName )
+        public List<string?> GetMaskedTextList(FileInfo fileName,List<BadWord?> getBadWord)
         {
             List<string?> maskedTexts = new List<string?>();
 
             int badCount = 0;
+
             StreamReader reader = new StreamReader(fileName.FullName);
 
             while (true) //read everything from the copied file that have bad word
@@ -112,11 +160,12 @@ namespace Task1
                 string line = reader.ReadLine();
                 if (line != null)
                 {
-                    List<string?>? subs = line.Split(" ").ToList();
+                    List<string?>? subs = line.Split(" ").ToList()!;
                     foreach (var sub in subs)
                     {
-                        var getBadWord = GetBadWords();
+                        //var getBadWord = GetBadWordRank();
 
+                        //filtering text for special characters
                         if (sub.Contains('.') || sub.Contains(','))
                         {
                             string remove = "";
@@ -128,15 +177,23 @@ namespace Task1
                             if (sub.Contains(','))
                             {
                                 remove = sub.Remove(sub.IndexOf(','));
+                                
                             }
                             
-                            BadWord badword = getBadWord.Find(x => remove.Contains(x.Word));
+                            //search for bad word 
+                            BadWord? badword = getBadWord.Find(x => remove.Contains(x.Word));
                             
+                            //add everything into a new list
                             if (badword != null)
                             {
                                 badCount++;
+                                //count bad word and add to the report list
+                                badword.Count++;
+                                _badWordReport.Add(badword);
+
                                 var maskWord = sub.Replace(badword.Word, MASK).ToString();
                                 maskedTexts.Add(maskWord);
+
                             }
                             else
                             {
@@ -145,17 +202,18 @@ namespace Task1
                         }
                         else
                         {
-                            BadWord badword = getBadWord.Find(x => sub.Contains(x.Word));
+                            BadWord? badword = getBadWord.Find(x => sub.Contains(x.Word));
                             if (badword != null)
                             {
                                 badCount++;
+                                badword.Count++;
+                                _badWordReport.Add(badword);
                                 var maskWord = sub.Replace(badword.Word, MASK).ToString();
                                 maskedTexts.Add(maskWord);
                             }
                             else
                             {
                                 maskedTexts.Add(sub);
-
                             }
                         }
                     }
@@ -175,7 +233,6 @@ namespace Task1
                 var reportDir = fileName.FullName + "\t|" + fileName.Length + " bytes\t | " + badCount + " words found";
                 _foundDir.Add(reportDir);
             }
-
             GetBadCount = badCount;
             return maskedTexts;
         }
@@ -235,6 +292,36 @@ namespace Task1
             }
         }
 
+        //need to modify to display only 10 on start up
+        public List<BadWord?> GetBadWordRank()
+        {
+            var getBadWordRank = new List<BadWord?>();
+            try
+            {
+                StreamReader streamReader = new StreamReader(BADWORDDIRRANK);
+                string? line;
+
+                while ((line = streamReader.ReadLine()) != null)
+                {
+                    BadWord? badWord = new BadWord();
+                    
+                    if (line.Contains(":"))
+                    {
+                        badWord.Count = int.Parse(line.Split(':')[0]);
+                        badWord.Word = line.Split(':')[1];
+                    }
+                    getBadWordRank.Add(badWord);
+                }
+                streamReader.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error file : not found" + ex.Message);
+            }
+
+            return getBadWordRank;
+        }
+        
         //gat all bad word from the textfile and put it all in a list 
         public List<BadWord?> GetBadWords()
         {

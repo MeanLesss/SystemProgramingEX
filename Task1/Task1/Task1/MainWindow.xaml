@@ -5,14 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Task1"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
+        Title="MainWindow" Height="550" Width="1000"
         Background="LightSeaGreen" Loaded="Window_Loaded"
         >
     <Grid>
-        <Label Content="Select a text file" HorizontalAlignment="Left" Margin="56,56,0,0" VerticalAlignment="Top" FontSize="20"/>
+        <Label Content="Select a text file" HorizontalAlignment="Left" Margin="17,90,0,0" VerticalAlignment="Top" FontSize="20"/>
         <TextBox HorizontalAlignment="Left" 
                  Height="31" 
-                 Margin="207,62,0,0" 
+                 Margin="168,96,0,0" 
                  TextWrapping="Wrap" 
                  VerticalAlignment="Top" 
                  VerticalContentAlignment="Center"
@@ -21,28 +21,28 @@
         <ProgressBar HorizontalAlignment="Left" 
                      Height="23"
                      Width="426" 
-                     Margin="207,113,0,0" 
+                     Margin="168,147,0,0" 
                      VerticalAlignment="Top" 
                      Name="progressBar"/>
         <Button Content="Start" 
                 Name="ButtonStart"
                 HorizontalAlignment="Left"
-                Margin="210,191,0,0" 
+                Margin="171,225,0,0" 
                 VerticalAlignment="Top" Width="90" 
                 Height="32" Click="ButtonStart_Click"
                 />
-        <Label Content="0%" HorizontalAlignment="Left" Margin="638,110,0,0" VerticalAlignment="Top" Name="lblPercent"/>
+        <Label Content="0%" HorizontalAlignment="Left" Margin="599,144,0,0" VerticalAlignment="Top" Name="lblPercent"/>
         <Button Content="Browse"
                 Name="ButtonBrowse"
                 HorizontalAlignment="Left"
-                Margin="651,62,0,0" 
+                Margin="612,96,0,0" 
                 VerticalAlignment="Top" Width="97"
                 Height="31" Click="ButtonBrowse_Click" />
         <Button 
             Content="Pause"
             x:Name="ButtonPause"
             HorizontalAlignment="Left"
-            Margin="482,191,0,0" 
+            Margin="443,225,0,0" 
             VerticalAlignment="Top" Width="88" 
             Height="32" Click="ButtonPause_Click"
             IsEnabled="False"/>
@@ -50,47 +50,51 @@
                 x:Name="ButtonCancel"
                 HorizontalAlignment="Left" 
                 VerticalAlignment="Top" Width="90" 
-                Height="32" Margin="574,191,0,0" Click="ButtonCancel_Click"
+                Height="32" Margin="535,225,0,0" Click="ButtonCancel_Click"
 
         />
         <Label Content="Note the file is so small the progress can NOT be wait to pause or cancel"
                HorizontalAlignment="Left" 
-               Margin="206,158,0,0" 
+               Margin="167,192,0,0" 
                VerticalAlignment="Top" 
                FontSize="16"
                Foreground="Crimson"/>
         <Label Content="Scan outside of project folder if no Dir selected"
             HorizontalAlignment="Left" 
-            Margin="207,26,0,0" 
+            Margin="168,60,0,0" 
             VerticalAlignment="Top" 
             FontSize="16"
             Foreground="Crimson"/>
         <ListView Name="ListViewDisplay"
-            Margin="11,264,400,10">
+            Margin="11,362,607,10">
         </ListView>
         <ListView x:Name="ListViewReport"
-            Margin="420,264,10,10"/>
+            Margin="398,362,10,10"/>
         <Label Content="Result :"
-               HorizontalAlignment="Left" Margin="11,222,0,0" VerticalAlignment="Top" FontSize="20"/>
+               HorizontalAlignment="Left" Margin="11,317,0,0" VerticalAlignment="Top" FontSize="20"/>
         <Label Content="Report :" 
-               HorizontalAlignment="Left" Margin="420,222,0,0" VerticalAlignment="Top" FontSize="20"/>
-        <Label x:Name="labelViewReport" Content="View Report" HorizontalAlignment="Left" Margin="510,228,0,0" VerticalAlignment="Top" FontSize="14" Foreground="#FF004AFF" FontStyle="Italic" MouseDown="labelViewReport_MouseDown"/>
+               HorizontalAlignment="Left" Margin="397,317,0,0" VerticalAlignment="Top" FontSize="20"/>
+        <Label x:Name="labelViewReport" Content="View Report" HorizontalAlignment="Left" Margin="487,323,0,0" VerticalAlignment="Top" FontSize="14" Foreground="#FF004AFF" FontStyle="Italic" MouseDown="labelViewReport_MouseDown"/>
 
         <Label Content="process"
                Name="labelProcess"
                HorizontalAlignment="Left" 
-               Margin="205,132,0,0" 
+               Margin="166,166,0,0" 
                VerticalAlignment="Top" 
                FontSize="12"
                Foreground="black"/>
         <Button Content="Resume" 
             x:Name="ButtonResume"
             HorizontalAlignment="Left"
-            Margin="387,191,0,0" 
+            Margin="348,225,0,0" 
             VerticalAlignment="Top" Width="90" 
             Height="32" Click="ButtonResume_Click"
             IsEnabled="False"
                 />
+        <ListView x:Name="ListViewTopWord"
+            Margin="728,54,10,177"/>
+        <Label Content="Top 10 bad words :"
+            HorizontalAlignment="Left" Margin="728,10,0,0" VerticalAlignment="Top" FontSize="20"/>
 
     </Grid>
 </Window>

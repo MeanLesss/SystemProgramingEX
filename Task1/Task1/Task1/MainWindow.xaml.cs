@@ -37,7 +37,12 @@ namespace Task1
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            _badWordList = _maskingWord.GetBadWords();
+            _badWordList = _maskingWord.GetBadWordRank();
+            foreach (var line in _badWordList)
+            {
+                ListViewTopWord.Items.Add(line.Count + " - " + line.Word);
+            }
+            
         }
         private void ButtonBrowse_Click(object sender, RoutedEventArgs e)
         {
@@ -92,7 +97,7 @@ namespace Task1
                 var destFileName = Path.GetFileName(fileName);
                 var file = new FileInfo(fileName);
                 var destination = new FileInfo(COPIEDDIR + destFileName);
-                maskedTexts = _maskingWord.GetMaskedTextList(file);
+                maskedTexts = _maskingWord.GetMaskedTextList(file,_badWordList);
                 //copy file when it found bad word
                 Thread copyThread = new Thread(copyThread => _maskingWord.CopyFile(file, destination,
                     x => progressBar.Dispatcher.BeginInvoke(new Action(() =>
@@ -157,8 +162,13 @@ namespace Task1
                         ButtonPause.IsEnabled = false;
                         ButtonResume.IsEnabled = false;
                     })));
+                }
+                _maskingWord.WriteBadWordReport(_badWordList);
 
-
+                ListViewTopWord.Items.Clear();
+                foreach (var word in _maskingWord.GetBadWordReport())
+                {
+                    ListViewTopWord.Items.Add(word.Count + " - " + word.Word);
                 }
             }
             catch (Exception ex)
