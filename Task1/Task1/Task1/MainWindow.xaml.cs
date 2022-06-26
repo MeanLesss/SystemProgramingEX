@@ -39,11 +39,7 @@ namespace Task1
         {
             _badWordList = _maskingWord.GetBadWordRank();
 
-            foreach (var line in _badWordList)
-            {
-                ListViewTopWord.Items.Add(line.Count + " - " + line.Word);
-            }
-            
+            UpdateTopList();
         }
         private void ButtonBrowse_Click(object sender, RoutedEventArgs e)
         {
@@ -169,11 +165,15 @@ namespace Task1
                 }
                 _maskingWord.WriteBadWordReport(_badWordList);// make this a thread too and make progress
 
-                ListViewTopWord.Items.Clear();
+                UpdateTopList();
+                /*ListViewTopWord.Items.Clear();
+                int i = 1;
                 foreach (var word in _maskingWord.GetTopWord(_badWordList))
                 {
-                    ListViewTopWord.Items.Add(word.Count + " - " + word.Word);
+                    ListViewTopWord.Items.Add("Top " + i + " : " +word.Count + " - " + word.Word);
+                    i++;
                 }
+                i = 0;*/
             }
             catch (Exception ex)
             {
@@ -196,6 +196,18 @@ namespace Task1
             {
                 lblPercent.Content = "0%";
             });
+        }
+
+        private void UpdateTopList()
+        {
+            ListViewTopWord.Items.Clear();
+            int i = 1;
+            foreach (var word in _maskingWord.GetTopWord(_badWordList))
+            {
+                ListViewTopWord.Items.Add("Top " + i + " : " + word.Count + " - " + word.Word);
+                i++;
+            }
+            i = 0;
         }
         private void UpdateResultDisplay(string? word)
         {

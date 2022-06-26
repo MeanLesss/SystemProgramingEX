@@ -80,7 +80,12 @@ namespace Task1
             //to sort and pick top 10 from the list  but NO clue how to count for each word that found (future update)
             /*List<int> list = new List<int>();*/
             var result = topWord.OrderByDescending(w => w.Count).Take(10);
-            return topWord;
+
+            /*var list = (from t in ctn.Items
+                where t.DeliverySelection == true && t.Delivery.SentForDelivery == null
+                orderby t.Delivery.SubmissionDate
+                select t).Take(5);*/
+            return result.ToList();
         }
         public void WriteReport(Action<int> progressCallBack)
         {
