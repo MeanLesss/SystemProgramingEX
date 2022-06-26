@@ -161,19 +161,10 @@ namespace Task1
                         //refresh the old list
                         _badWordList.Clear();
                         _badWordList = _maskingWord.GetBadWordRank();
+                        _maskingWord.WriteBadWordReport(_badWordList);// make this a thread too and make progress
+                        UpdateTopList();
                     })));
                 }
-                _maskingWord.WriteBadWordReport(_badWordList);// make this a thread too and make progress
-
-                UpdateTopList();
-                /*ListViewTopWord.Items.Clear();
-                int i = 1;
-                foreach (var word in _maskingWord.GetTopWord(_badWordList))
-                {
-                    ListViewTopWord.Items.Add("Top " + i + " : " +word.Count + " - " + word.Word);
-                    i++;
-                }
-                i = 0;*/
             }
             catch (Exception ex)
             {

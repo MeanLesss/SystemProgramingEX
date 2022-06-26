@@ -77,14 +77,15 @@ namespace Task1
         public List<BadWord?> GetTopWord(List<BadWord?> refreshedList) 
         {
             var topWord = refreshedList;
-            //to sort and pick top 10 from the list  but NO clue how to count for each word that found (future update)
-            /*List<int> list = new List<int>();*/
-            var result = topWord.OrderByDescending(w => w.Count).Take(10);
+            //select 10 word from the list 
+            //var result = topWord.OrderByDescending(w => w.Count).Take(10);
+            var result = topWord.OrderByDescending(w => w.Count).GroupBy(x => x.Word).Select(
+                g => new BadWord()
+                {
+                    Word = g.Key,
+                    Count = g.Select(x => x.Count).Max()
+                }).Take(10);
 
-            /*var list = (from t in ctn.Items
-                where t.DeliverySelection == true && t.Delivery.SentForDelivery == null
-                orderby t.Delivery.SubmissionDate
-                select t).Take(5);*/
             return result.ToList();
         }
         public void WriteReport(Action<int> progressCallBack)
@@ -124,7 +125,6 @@ namespace Task1
             reportList.Clear();
             _foundDir.Clear();
         }
-
 
         public List<string?> GetReportList()
         {
