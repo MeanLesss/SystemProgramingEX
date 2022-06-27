@@ -33,7 +33,7 @@ namespace Task1
             
         }
 
-        public List<BadWord> GetBadWordReport()
+        public List<BadWord?> GetBadWordReport()
         {
             var badwordReport = _badWordReport.GroupBy(x => x.Word)
                 .Select(g => new BadWord()
@@ -155,7 +155,7 @@ namespace Task1
 
             while (true) //read everything from the copied file that have bad word
             {
-                string line = reader.ReadLine();
+                string? line = reader.ReadLine();
                 if (line != null)
                 {
                     List<string?>? subs = line.Split(" ").ToList()!;
@@ -297,9 +297,8 @@ namespace Task1
             try
             {
                 StreamReader streamReader = new StreamReader(BADWORDDIRRANK);
-                string? line;
 
-                while ((line = streamReader.ReadLine()) != null)
+                while (streamReader.ReadLine() is { } line)
                 {
                     BadWord? badWord = new BadWord();
                     
@@ -320,15 +319,14 @@ namespace Task1
             return getBadWordRank;
         }
         
-        //gat all bad word from the textfile and put it all in a list 
+        //gat all bad word from the text file and put it all in a list 
         public List<BadWord?> GetBadWords()
         {
             var badWords = new List<BadWord?>();
             try
             {
                 StreamReader streamReader = new StreamReader(BADWORDDIR);
-                string? line;
-                while ((line = streamReader.ReadLine()) != null)
+                while (streamReader.ReadLine() is { } line)
                 {
                     BadWord? badWord = new BadWord();
                     badWord.Word = line;
